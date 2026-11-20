@@ -1,17 +1,17 @@
 package com.wzu.aispringboot.service;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wzu.aispringboot.DTO.command.UserLoginCommandDTO;
+import com.wzu.aispringboot.DTO.command.UserRegisterCommandDTO;
 import com.wzu.aispringboot.DTO.response.UserLoginResponseDTO;
-import com.wzu.aispringboot.common.Result;
 import com.wzu.aispringboot.entity.User;
-import com.wzu.aispringboot.enumclass.UserStatus;
+import com.wzu.aispringboot.enumclass.UserType;
 import com.wzu.aispringboot.exception.BusinessException;
 import com.wzu.aispringboot.mapper.UserMapper;
 import com.wzu.aispringboot.service.convert.UserConvert;
 import com.wzu.aispringboot.util.JwtTokenUtil;
 import jakarta.annotation.Resource;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -55,5 +55,49 @@ public class UserService {
 
         //返回登录成功响应
         return UserConvert.entityToLoginResponse(token, userInfo);
+    }
+
+    public UserLoginResponseDTO.UserDetailResponseDTO register(UserRegisterCommandDTO userRegisterCommandDTO) {
+        System.out.println(JSONUtil.parseObj(userRegisterCommandDTO));
+        //验证密码是否一致
+        if (!userRegisterCommandDTO.getPassword().equals(userRegisterCommandDTO.getConfirmPassword())) {
+            throw new BusinessException("两次输入密码不一致");
+        }
+
+        //检查用户是否存在，不能重复
+        LambdaQueryWrapper<User> userNameQueryWrapper = new LambdaQueryWrapper<>();
+        userNameQueryWrapper.eq(User::getUsername, userRegisterCommandDTO.getUsername());
+        if (userMapper.selectCount(userNameQueryWrapper) > 0) {
+            throw new BusinessException("用户名已存在");
+        }
+        //检查邮箱是否存在，不能重复
+        LambdaQueryWrapper<User> emailQueryWrapper = new LambdaQueryWrapper<>();
+        emailQueryWrapper.eq(User::getEmail, userRegisterCommandDTO.getEmail());
+        if (userMapper.selectCount(emailQueryWrapper) > 0) {
+            throw new BusinessException("邮箱已存在");
+        }
+
+        //用户类型是否有效
+        if (!UserType.isValidCode(userRegisterCommandDTO.getUserType())) {
+            throw new BusinessException("用户类型无效");
+        }
+
+        //创建用户
+        String password = userRegisterCommandDTO.getPassword().trim();
+        password = passwordEncoder.encode(password);
+        User user = UserConvert.registerCommandToEntity(userRegisterCommandDTO, password);
+
+        //插入数据库
+        userMapper.insert(user);
+
+        return UserConvert.entityToDetailResponse(user);
+    }
+
+    public UserLoginResponseDTO.UserDetailResponseDTO getUserById(Long id) {
+        User user = userMapper.selectById(id);
+        if (user == null){
+            throw new BusinessException("用户不存在");
+        }
+        return UserConvert.entityToDetailResponse(user);
     }
 }

@@ -1,8 +1,12 @@
 package com.wzu.aispringboot.service.convert;
 
 
+import com.wzu.aispringboot.DTO.command.UserRegisterCommandDTO;
 import com.wzu.aispringboot.DTO.response.UserLoginResponseDTO;
 import com.wzu.aispringboot.entity.User;
+import com.wzu.aispringboot.enumclass.UserStatus;
+
+import java.time.LocalDateTime;
 
 public class UserConvert {
     //构建响应DTO
@@ -63,5 +67,20 @@ public class UserConvert {
             default:
                 return "未知";
         }
+    }
+
+    public static User registerCommandToEntity(UserRegisterCommandDTO userRegisterCommandDTO, String encodedPassword) {
+        return User.builder()
+                .username(userRegisterCommandDTO.getUsername())
+                .email(userRegisterCommandDTO.getEmail())
+                .phone(userRegisterCommandDTO.getPhone())
+                .password(encodedPassword)
+                .nickname(userRegisterCommandDTO.getNickname())
+                .gender(userRegisterCommandDTO.getGender())
+                .userType(userRegisterCommandDTO.getUserType())
+                .status(UserStatus.NORMAL.getCode())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 }
