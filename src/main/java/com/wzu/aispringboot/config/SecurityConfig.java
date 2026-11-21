@@ -21,6 +21,8 @@ public class SecurityConfig {
             "/api/test",
             "/api/user/login",
             "/api/user/add",
+            "/api/psychological-chat/session/start",
+
     };
 
     public static Boolean isPublicPath(String requestUri){
