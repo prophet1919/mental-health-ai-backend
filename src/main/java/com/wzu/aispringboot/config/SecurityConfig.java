@@ -22,7 +22,7 @@ public class SecurityConfig {
             "/api/user/login",
             "/api/user/add",
             "/api/psychological-chat/session/start",
-
+            "/api/psychological-chat/stream"
     };
 
     public static Boolean isPublicPath(String requestUri){

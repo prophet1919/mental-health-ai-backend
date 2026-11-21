@@ -4,6 +4,18 @@ spring:
     url: jdbc:mysql://localhost:3306/mental_health_assistant?useSSL=false&serverTimezone=UTC
     username: root
     password: ${DB_PASSWORD:}
+
+  ai:
+    openai:
+      chat:
+        options:
+          model: deepseek-flash
+          tool-calling:
+            enabled: true
+        completions-path: /v1/chat/completions
+      api-key: REDACTED_OLD_API_KEY
+      base-url: https://api.deepseek.com
+
 # 服务器配置
 server:
   port: 1236
