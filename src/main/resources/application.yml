@@ -1,7 +1,7 @@
 # 数据库配置
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/mental_health_assistant?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/mentalhealth_ds_test1?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
     password: ${DB_PASSWORD:}
 
@@ -19,6 +19,25 @@ spring:
 # 服务器配置
 server:
   port: 1236
+  tomcat:
+    # SSE 长连接：把异步连接超时放宽到 5 分钟
+    connection-timeout: 300000
+  mvc:
+    async:
+      # 关键：SSE 异步请求超时。默认 30s 对推理模型太短，
+      # 推理阶段超过 30s 会抛 AsyncRequestTimeoutException，
+      # 而响应已提交，最终表现为 "response has already been committed"
+      request-timeout: 300000
+
+# 应用自定义配置
+app:
+  chat-memory:
+    # mysql = 从数据库重建上下文（默认，无需中间件）
+    # redis = 使用 Redis 存储上下文（需先启动 Memurai/Redis）
+    store: mysql
+    max-messages: 20
+  ai:
+    model-label: deepseek-flash
 
 # JWT配置
 jwt:
