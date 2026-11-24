@@ -9,6 +9,8 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.wzu.aispringboot.config.JwtConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -25,6 +27,10 @@ import static com.baomidou.mybatisplus.spring.spi.SpringCompatibleSet.applicatio
 @Component
 public class JwtTokenUtil implements ApplicationContextAware {
     private static final String ISSUER = "mental-health-assistant";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String LEGACY_TOKEN_HEADER = "token";
+    private static final Logger LOG = LoggerFactory.getLogger(JwtTokenUtil.class);
     private static ApplicationContext applicationContext;
     //用于在静态工具类中使用spring容器中的Bean
     @Override
@@ -60,15 +66,31 @@ public class JwtTokenUtil implements ApplicationContextAware {
         }
     }
 
-    //提取token
+    //提取token：统一 Authorization: Bearer <token>，兼容旧的 token 头一个版本
     public static String extractTokenFromRequest(HttpServletRequest request){
         if(request == null){
             return null;
         }
 
-        String tokenHeader = request.getHeader("token");
-        if(StringUtils.hasText(tokenHeader)){
-            return tokenHeader;
+        // 1) 标准方式：Authorization: Bearer <token>
+        String authHeader = request.getHeader(AUTHORIZATION_HEADER);
+        if(StringUtils.hasText(authHeader)){
+            if(authHeader.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())){
+                String token = authHeader.substring(BEARER_PREFIX.length()).trim();
+                if(StringUtils.hasText(token)){
+                    return token;
+                }
+            }else{
+                // 兼容不带头缀直接放 token 的调用方
+                return authHeader.trim();
+            }
+        }
+
+        // 2) 过渡兼容：旧的 token 头（下一版本移除）
+        String legacyToken = request.getHeader(LEGACY_TOKEN_HEADER);
+        if(StringUtils.hasText(legacyToken)){
+            LOG.warn("检测到已废弃的 token 请求头，请改用 {}: {}<token>", AUTHORIZATION_HEADER, BEARER_PREFIX);
+            return legacyToken;
         }
         return null;
     }

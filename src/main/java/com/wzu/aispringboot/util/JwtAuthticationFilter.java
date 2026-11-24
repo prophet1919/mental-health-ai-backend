@@ -11,18 +11,23 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.SimpleFormatter;
 
+@Component
 public class JwtAuthticationFilter extends OncePerRequestFilter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JwtAuthticationFilter.class);
 
     @Resource
     private UserService userService;
@@ -39,12 +44,9 @@ public class JwtAuthticationFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain chain) throws ServletException, IOException {
-        // 获取请求的URI和方法
         String requestUri = request.getRequestURI();
         String method = request.getMethod();
-        System.out.println("requestUri: " + requestUri);
-        System.out.println("method: " + method);
-        //1. 从请求头中获取JWT token
+        // 1. 从请求头中获取JWT token（Authorization: Bearer <token>）
         String token = JwtTokenUtil.extractTokenFromRequest(request);
         if(StringUtils.hasText(token)){
             // 验证token并获取用户信息
@@ -52,7 +54,6 @@ public class JwtAuthticationFilter extends OncePerRequestFilter {
             if (validationResult != null && validationResult.isValid()) {
                 //3.查询用户信息，验证用户状态
                 UserLoginResponseDTO.UserDetailResponseDTO user = userService.getUserById(validationResult.getUserId());
-                System.out.println(JSONUtil.parseObj(user));
                 if(user != null && UserStatus.NORMAL.getCode().equals(user.getStatus())){
                     //4.创建Spring Security认证对象
                     List<SimpleGrantedAuthority> authorities = Collections.singletonList(
@@ -69,19 +70,23 @@ public class JwtAuthticationFilter extends OncePerRequestFilter {
 
                     //7.将token存储到请求属性中
                     request.setAttribute("jwtToken", token);
+                    request.setAttribute("userId", validationResult.getUserId());
+                    request.setAttribute("roleType", validationResult.getRoleType());
 
-
+                    LOG.debug("鉴权通过 uri={} method={} userId={}", requestUri, method, validationResult.getUserId());
                 }else{
                     //清理上下文
                     clearSecurityContext();
                     //响应错误信息
                     ResponseUtil.writeError(response, ResultCode.TOKEN_ACCESS_FORBIDDEN);
+                    return;
                 }
             }else {
                 //清理上下文
                 clearSecurityContext();
                 //2. 响应错误信息
                 ResponseUtil.writeError(response, ResultCode.TOKEN_INVALID);
+                return;
             }
         }else{
             //清理上下文
