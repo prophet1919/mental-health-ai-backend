@@ -12,7 +12,7 @@ public class UserLoginCommandDTO {
     @Size(max = 100, message = "用户名或邮箱长度不能超过100个字符")//限制用户名或邮箱长度不能超过100个字符
     private String username;
     @NotBlank(message = "密码不能为空")// 校验密码是否为空,提示信息
-    @Size(max = 50, min = 6, message = "密码长度不能超过100个字符")//限制密码长度不能超过100个字符
+    @Size(max = 50, min = 6, message = "密码长度必须在6到50个字符之间")//限制密码长度6-50个字符
     private String password;
 
 }
