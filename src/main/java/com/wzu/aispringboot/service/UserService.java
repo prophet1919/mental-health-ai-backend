@@ -1,6 +1,5 @@
 package com.wzu.aispringboot.service;
 
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wzu.aispringboot.DTO.command.UserLoginCommandDTO;
 import com.wzu.aispringboot.DTO.command.UserRegisterCommandDTO;
@@ -30,17 +29,16 @@ public class UserService {
                 .eq(User::getEmail, userLoginCommandDTO.getUsername());
         //调用mybatis-plus的api查询用户
         User user = userMapper.selectOne(queryWrapper);
-        System.out.println(user);
 
-        // 判断用户是否存在
+        // 判断用户是否存在（不区分"用户不存在"与"密码错误"，避免账号枚举）
         if (user == null) {
-            throw new BusinessException("用户不存在");
+            throw new BusinessException("用户名或密码错误");
         }
 
         //验证密码
         String inputPassword = userLoginCommandDTO.getPassword().trim();//去掉密码首尾空格
         if (!passwordEncoder.matches(inputPassword, user.getPassword())) {
-            throw new BusinessException("密码错误");
+            throw new BusinessException("用户名或密码错误");
         }
 
         //检查用户状态（是否被禁用），使用枚举类UserStatus
@@ -50,7 +48,6 @@ public class UserService {
 
         //生成Jwt token
         String token = JwtTokenUtil.generateToken(user.getId(), user.getUsername(), user.getUserType());
-        System.out.println(token);
         UserLoginResponseDTO.UserDetailResponseDTO userInfo = UserConvert.entityToDetailResponse(user);
 
         //返回登录成功响应
@@ -58,7 +55,6 @@ public class UserService {
     }
 
     public UserLoginResponseDTO.UserDetailResponseDTO register(UserRegisterCommandDTO userRegisterCommandDTO) {
-        System.out.println(JSONUtil.parseObj(userRegisterCommandDTO));
         //验证密码是否一致
         if (!userRegisterCommandDTO.getPassword().equals(userRegisterCommandDTO.getConfirmPassword())) {
             throw new BusinessException("两次输入密码不一致");
