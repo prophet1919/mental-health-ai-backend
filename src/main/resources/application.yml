@@ -1,24 +1,36 @@
-# 数据库配置
+# ============================================================================
+# 心理健康 AI 助手 · 主配置
+# ----------------------------------------------------------------------------
+# 本文件会被提交到公开仓库，禁止写入任何真实密钥。
+# 所有敏感项都通过 ${ENV_VAR:默认值} 读取环境变量：
+#   - 本地开发：复制 application-local.yml.example 为 application-local.yml
+#     并填入真实值，该文件已被 .gitignore 忽略，不会入库。
+#   - 服务器部署：通过环境变量或配置中心注入。
+# ============================================================================
 spring:
+  # 可选加载本地私密配置（不存在也不会报错）
+  config:
+    import: optional:file:./application-local.yml,optional:classpath:application-local.yml
+
   datasource:
-    url: jdbc:mysql://localhost:3306/mentalhealth_ds_test1?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
-    username: root
+    url: ${DB_URL:jdbc:mysql://localhost:3306/mentalhealth_ds_test1?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
 
   ai:
     openai:
       chat:
         options:
-          model: deepseek-flash
+          model: ${AI_MODEL:deepseek-flash}
           tool-calling:
             enabled: true
         completions-path: /v1/chat/completions
-      api-key: REDACTED_OLD_API_KEY
-      base-url: https://api.deepseek.com
+      api-key: ${DEEPSEEK_API_KEY:}
+      base-url: ${AI_BASE_URL:https://api.deepseek.com}
 
 # 服务器配置
 server:
-  port: 1236
+  port: ${SERVER_PORT:1236}
   tomcat:
     # SSE 长连接：把异步连接超时放宽到 5 分钟
     connection-timeout: 300000
@@ -34,15 +46,20 @@ app:
   chat-memory:
     # mysql = 从数据库重建上下文（默认，无需中间件）
     # redis = 使用 Redis 存储上下文（需先启动 Memurai/Redis）
-    store: mysql
+    store: ${CHAT_MEMORY_STORE:mysql}
     max-messages: 20
   ai:
-    model-label: deepseek-flash
+    model-label: ${AI_MODEL_LABEL:deepseek-flash}
+  cors:
+    # 前端开发地址，生产环境改为实际域名
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
 
-# JWT配置
+# JWT 配置
 jwt:
-  secret: REDACTED_OLD_JWT_SECRET
-  expiration: 86400000  # 24小时（毫秒）
-  refresh-expiration: 604800000  # 7天（毫秒）
-  header: Authorization  # token头部名称
-  token-prefix: "Bearer "  # token前缀
+  # 必填：必须通过环境变量或 application-local.yml 提供
+  # 未配置时应用启动会失败，避免用弱默认值上线
+  secret: ${JWT_SECRET:}
+  expiration: 86400000        # 24小时（毫秒）
+  refresh-expiration: 604800000   # 7天（毫秒）
+  header: Authorization       # token头部名称
+  token-prefix: "Bearer "     # token前缀

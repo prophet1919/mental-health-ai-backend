@@ -4,6 +4,25 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### 本地私密配置（含密钥，禁止入库）###
+application-local.yml
+application-local.yaml
+application-local.properties
+**/application-local.yml
+!**/application-local.yml.example
+
+### 环境变量文件 ###
+.env
+.env.local
+.env.*.local
+
+### 其他密钥文件 ###
+*.pem
+*.key
+*.p12
+*.jks
+
+
 ### STS ###
 .apt_generated
 .classpath

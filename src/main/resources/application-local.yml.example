@@ -1,0 +1,15 @@
+# ============================================================================
+# 本地私密配置 —— 此文件已被 .gitignore 忽略，绝不会提交到仓库
+# ----------------------------------------------------------------------------
+# 复制本文件为 application-local.yml 并填入真实值即可覆盖主配置。
+# application.yml 通过 spring.config.import 自动加载它（文件不存在也不报错）。
+# ============================================================================
+spring:
+  datasource:
+    password: your-db-password
+  ai:
+    openai:
+      api-key: sk-your-deepseek-api-key
+
+jwt:
+  secret: change-me-to-a-random-string-of-at-least-32-chars
